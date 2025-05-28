@@ -11,7 +11,7 @@ app.set('view engine', 'ejs')
 
 app.get('/', (req, res) => {
   console.log(`Rendering 'pages/index' for route '/'`)
-  res.render('pages/index')
+  res.send("Hello World")
 })
 
 const server = app.listen(port, () => {
