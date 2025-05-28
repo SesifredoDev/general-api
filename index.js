@@ -1,15 +1,28 @@
 const express = require('express')
+const path = require('path')
+
+const port = process.env.PORT || 5006
+
 const app = express()
-const port = 3000
 
-app.get('/', (req, res) =>{
-    res.send("Hello World")
+app.use(express.static(path.join(__dirname, 'public')))
+app.set('views', path.join(__dirname, 'views'))
+app.set('view engine', 'ejs')
+
+app.get('/', (req, res) => {
+  console.log(`Rendering 'pages/index' for route '/'`)
+  res.render('pages/index')
 })
 
-app.get('/ping', (req, res) =>{
-    res.send("pong")
+const server = app.listen(port, () => {
+  console.log(`Listening on ${port}`)
 })
 
-app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`)
+process.on('SIGTERM', async () => {
+  console.log('SIGTERM signal received: gracefully shutting down')
+  if (server) {
+    server.close(() => {
+      console.log('HTTP server closed')
+    })
+  }
 })
