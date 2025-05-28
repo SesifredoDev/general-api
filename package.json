@@ -1,0 +1,23 @@
+{
+  "name": "general-api",
+  "version": "1.0.0",
+  "description": "General API for Paolo Chaffey",
+  "homepage": "https://github.com/SesifredoDev/general-api#readme",
+  "bugs": {
+    "url": "https://github.com/SesifredoDev/general-api/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SesifredoDev/general-api.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}
