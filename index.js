@@ -1,4 +1,6 @@
 const express = require('express')
+const train = require("./rpgML/train")
+const predict = require("./rpgML/predict")
 const path = require('path')
 
 const port = process.env.PORT || 5006
@@ -14,6 +16,20 @@ app.get('/', (req, res) => {
   res.send("Hello World")
 })
 
+app.get('/predict', async (req, res)=>{
+  const data = req.query;
+  let input =  data.input;
+  let type = Number(data.type);
+
+
+  predict.predict(type, input).then((result)=>{
+    res.send(result)
+  });
+
+  
+  
+})
+
 const server = app.listen(port, () => {
   console.log(`Listening on ${port}`)
 })
@@ -26,3 +42,13 @@ process.on('SIGTERM', async () => {
     })
   }
 })
+
+
+bootsequence = async () =>{
+  console.log("=== 🔃 Bootsequence ===")
+  // await train.train()
+  await predict.loadModel();
+  ;
+}
+
+bootsequence();
