@@ -42,7 +42,7 @@ app.get('/train', (req,res)=>{
   res.send('training now..')
 })
 
-app.get('/predict', async (req, res)=>{
+app.post('/predict', async (req, res)=>{
   const data = req.body;
   let input =  data.input;
   let type = Number(data.type);
