@@ -37,6 +37,11 @@ app.get('/', (req, res) => {
   res.send("Hello World")
 })
 
+app.get('/train', (req,res)=>{
+  train.train();
+  res.send('training now..')
+})
+
 app.get('/predict', async (req, res)=>{
   const data = req.body;
   let input =  data.input;
@@ -63,13 +68,3 @@ process.on('SIGTERM', async () => {
     })
   }
 })
-
-
-bootsequence = async () =>{
-  console.log("=== 🔃 Bootsequence ===")
-  // await train.train()
-  await predict.loadModel();
-  ;
-}
-
-bootsequence();
