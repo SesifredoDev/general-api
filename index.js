@@ -1,14 +1,19 @@
 const express = require('express');
+const path = require('path');
+const cors = require('cors');
+const mongoose = require('mongoose');
+
+
+const authRoutes = require('./routes/auth');
 const train = require("./rpgML/train");
 const predict = require("./rpgML/predict");
 const rpgUtil = require("./rpgML/utils");
-const path = require('path');
 
-const cors = require('cors');
-const authRoutes = require('./routes/auth');
+
 
 require('dotenv').config();
 
+// Express Setup
 const port = process.env.PORT || 5006
 
 const app = express()
@@ -29,6 +34,20 @@ app.use(express.static(path.join(__dirname, 'public')))
 app.set('views', path.join(__dirname, 'views'))
 app.set('view engine', 'ejs')
 app.use(express.json())
+
+
+// MongoDB setup
+const mongoose = require('mongoose');
+
+mongoose.connect(process.env.MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+})
+.then(() => console.log('MongoDB connected'))
+.catch(err => console.error('MongoDB connection error:', err));
+
+
+
 app.use('/api/auth', authRoutes);
 
 
