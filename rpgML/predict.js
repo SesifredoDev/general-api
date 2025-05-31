@@ -43,6 +43,7 @@ async function predict(type, label) {
 
     const inputTensor = tf.tensor2d([vector]);
     const model = await loadModel();
+    console.log(model.summary())
     const prediction = model.predict(inputTensor);
     const [difficultyScore, statScore] = prediction.dataSync();
 
