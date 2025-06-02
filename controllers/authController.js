@@ -56,6 +56,8 @@ exports.register = async (req, res) => {
     password: hashedPassword,
     avatar: "",
     icon:  "",
+    level: 1,
+    xp:0,
     stats
   });
 
