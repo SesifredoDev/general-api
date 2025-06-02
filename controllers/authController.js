@@ -54,12 +54,14 @@ exports.register = async (req, res) => {
     name,
     email,
     password: hashedPassword,
-    type: "",
+    type: 1,
     avatar: "",
     icon:  "",
+    class: "",
     level: 1,
     xp:0,
-    stats
+    stats,
+    lastEntry:""
   });
 
   await newUser.save();

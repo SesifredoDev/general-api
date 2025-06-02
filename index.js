@@ -5,6 +5,8 @@ const mongoose = require('mongoose');
 
 
 const authRoutes = require('./routes/auth');
+const you2Routes  = require('./routes/you2')
+
 const train = require("./rpgML/train");
 const predict = require("./rpgML/predict");
 const rpgUtil = require("./rpgML/utils");
@@ -46,6 +48,7 @@ mongoose.connect(process.env.MONGO_URI, {
 
 
 app.use('/api/auth', authRoutes);
+app.use('/api', you2Routes)
 
 
 app.get('/', (req, res) => {
