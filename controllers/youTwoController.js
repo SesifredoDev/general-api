@@ -1,6 +1,6 @@
-
 const User = require('../models/userModel');
 const predict = require("../rpgML/predict");
+const train = require("../rpgML/train");
 const rpgUtil = require("../rpgML/utils");
 
 function isSameDay(dateToCheck) {
@@ -14,6 +14,10 @@ function isSameDay(dateToCheck) {
   );
 }
 
+exports.train = async (req, res) => {
+  train.train();
+  res.send('training now..');
+};
 
 exports.newEntry = async (req, res) => {
   const { input, id } = req.body;
@@ -21,6 +25,7 @@ exports.newEntry = async (req, res) => {
   try {
     const user = await User.findById(id).select('-password');
     if (!user) return res.status(404).json({ message: 'User not found' });
+
     if (isSameDay(user.lastEntry)) {
       return res.status(403).json({ message: 'Cannot make 2 entries on the same day.' });
     }
@@ -43,10 +48,9 @@ exports.newEntry = async (req, res) => {
       con: cleanStat(user.stats.con),
     };
 
-
     const originalStats = JSON.parse(JSON.stringify(user.stats));
 
-    // Accumulate XP
+    // Accumulate XP to each stat based on predictions
     predictionResults.forEach(prediction => {
       const rawKey = prediction?.predictedStat;
       if (typeof rawKey === 'string') {
@@ -57,13 +61,21 @@ exports.newEntry = async (req, res) => {
       }
     });
 
-    // Apply XP and handle stat level internally
+    // Apply XP and handle stat level ups
     for (const key in changes) {
-      const newXP = user.stats[key].xp + changes[key].xp;
-      user.stats[key].xp = newXP;
+      const stat = user.stats[key];
+      const totalXP = stat.xp + changes[key].xp;
 
-      // Optional: update stat level if desired, even if not returned
-      user.stats[key].level = Math.floor(newXP / 1000).toString();
+      let newLevel = parseInt(stat.level, 10);
+      let newXP = totalXP;
+
+      while (newXP >= 1000) {
+        newLevel += 1;
+        newXP -= 1000;
+      }
+
+      stat.xp = newXP;
+      stat.level = newLevel.toString(); // keep as string if schema expects string
     }
 
     // Total user XP across all stats

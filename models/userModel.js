@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const statBlockSchema = new mongoose.Schema({
   slug: { type: String, enum: ["str", "int", "wis", "dex", "cha", "con"], required: true },
   name: String,
-  level: String,
+  level: Number,
   xp: Number,
 }, { _id: false });
 
