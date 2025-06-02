@@ -15,6 +15,7 @@ const userSchema = new mongoose.Schema({
   avatar: String,
   icon: String,
   level: Number,
+  type:String,
   xp:Number,
   stats: {
     str: statBlockSchema,
