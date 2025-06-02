@@ -52,7 +52,7 @@ exports.newEntry = async (req, res) => {
 
     const originalStats = JSON.parse(JSON.stringify(user.stats));
 
-    let userXP = user.xp;
+    let userXP = user.xp||0;
     let changeXP = 0;
     let userLevelUpCount = 0;  
 
@@ -90,7 +90,7 @@ exports.newEntry = async (req, res) => {
 
     // User Level Ups
     userXP += changeXP;
-    while(UserXP >= 6000){
+    while(userXP >= 6000){
       userLevelUpCount += 1;
       userXP -= 6000;
     }
