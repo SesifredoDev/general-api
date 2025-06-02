@@ -25,10 +25,14 @@ exports.newEntry = async (req, res) => {
   try {
     const user = await User.findById(id).select('-password');
     if (!user) return res.status(404).json({ message: 'User not found' });
+    let userXP = user.xp;
+    let changeXP = 0;
+    let userLevelUpCount = 0;  
 
     if (isSameDay(user.lastEntry)) {
       return res.status(403).json({ message: 'Cannot make 2 entries on the same day.' });
     }
+
 
     const predictionResults = await rpgUtil.predictParagraph(user.type, input);
 
@@ -58,6 +62,7 @@ exports.newEntry = async (req, res) => {
         if (changes[statKey]) {
           changes[statKey].xp += Math.round(prediction.predictedDifficulty || 0);
         }
+        changeXP += Math.round(prediction.predictedDifficulty || 0);
       }
     });
 
@@ -75,13 +80,17 @@ exports.newEntry = async (req, res) => {
       }
 
       stat.xp = newXP;
-      stat.level = newLevel.toString(); // keep as string if schema expects string
+      stat.level = newLevel;
     }
 
-    // Total user XP across all stats
-    const totalXP = Object.values(user.stats).reduce((acc, stat) => acc + stat.xp, 0);
-    const newUserLevel = Math.floor(totalXP / 6000);
-    const userLevelUps = newUserLevel - user.level;
+
+    // User Level Ups
+    userXP += changeXP;
+    while(UserXP >= 6000){
+      userLevelUpCount += 1;
+      userXP -= 6000;
+    }
+
 
     user.level = newUserLevel;
     user.lastEntry = new Date();
@@ -94,7 +103,7 @@ exports.newEntry = async (req, res) => {
       origins: originalStats,
       ...(userLevelUps > 0 && {
         levelUp: {
-          count: userLevelUps
+          count: userLevelUpCount
         }
       })
     };
