@@ -97,6 +97,7 @@ exports.newEntry = async (req, res) => {
 
 
     user.level = user.level + userLevelUpCount;
+    user.xp = userXP;
     user.lastEntry = new Date();
 
     await user.save();
