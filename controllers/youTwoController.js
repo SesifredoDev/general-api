@@ -40,7 +40,7 @@ exports.newEntry = async (req, res) => {
 
     // Accumulate XP
     predictionResults.forEach(prediction => {
-      const statKey = prediction.predictedStat.toLowerCase();
+      const statKey = (prediction.predictedStat).toLowerCase();
       if (changes[statKey]) {
         changes[statKey].xp += Math.round(prediction.predictedDifficulty);
       }
