@@ -25,9 +25,7 @@ exports.newEntry = async (req, res) => {
   try {
     const user = await User.findById(id).select('-password');
     if (!user) return res.status(404).json({ message: 'User not found' });
-    let userXP = user.xp;
-    let changeXP = 0;
-    let userLevelUpCount = 0;  
+    
 
     if (isSameDay(user.lastEntry)) {
       return res.status(403).json({ message: 'Cannot make 2 entries on the same day.' });
@@ -53,6 +51,10 @@ exports.newEntry = async (req, res) => {
     };
 
     const originalStats = JSON.parse(JSON.stringify(user.stats));
+
+    let userXP = user.xp;
+    let changeXP = 0;
+    let userLevelUpCount = 0;  
 
     // Accumulate XP to each stat based on predictions
     predictionResults.forEach(prediction => {
@@ -83,6 +85,8 @@ exports.newEntry = async (req, res) => {
       stat.level = newLevel;
     }
 
+    
+
 
     // User Level Ups
     userXP += changeXP;
@@ -92,7 +96,7 @@ exports.newEntry = async (req, res) => {
     }
 
 
-    user.level = newUserLevel;
+    user.level = user.level + userLevelUpCount;
     user.lastEntry = new Date();
 
     await user.save();
