@@ -105,7 +105,7 @@ exports.newEntry = async (req, res) => {
       user,
       changes,
       origins: originalStats,
-      ...(userLevelUps > 0 && {
+      ...(userLevelUpCount > 0 && {
         levelUp: {
           count: userLevelUpCount
         }
