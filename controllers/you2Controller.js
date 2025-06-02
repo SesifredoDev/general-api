@@ -1,7 +1,7 @@
 
 const User = require('../models/userModel');
-const predict = require("./rpgML/predict");
-const rpgUtil = require("./rpgML/utils");
+const predict = require("../rpgML/predict");
+const rpgUtil = require("../rpgML/utils");
 
 function isSameDay(dateToCheck) {
   const today = new Date();
