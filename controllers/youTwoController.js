@@ -27,14 +27,22 @@ exports.newEntry = async (req, res) => {
 
     const predictionResults = await rpgUtil.predictParagraph(user.type, input);
 
+    const cleanStat = stat => ({
+      slug: stat.slug,
+      name: stat.name,
+      level: stat.level,
+      xp: 0
+    });
+
     const changes = {
-      str: { ...user.stats.str, xp: 0 },
-      int: { ...user.stats.int, xp: 0 },
-      wis: { ...user.stats.wis, xp: 0 },
-      dex: { ...user.stats.dex, xp: 0 },
-      cha: { ...user.stats.cha, xp: 0 },
-      con: { ...user.stats.con, xp: 0 },
+      str: cleanStat(user.stats.str),
+      int: cleanStat(user.stats.int),
+      wis: cleanStat(user.stats.wis),
+      dex: cleanStat(user.stats.dex),
+      cha: cleanStat(user.stats.cha),
+      con: cleanStat(user.stats.con),
     };
+
 
     const originalStats = JSON.parse(JSON.stringify(user.stats));
 
