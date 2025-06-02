@@ -5,6 +5,7 @@ const verifyToken = require('../middleware/authMiddleware');
 
 router.post('/register', authController.register);
 router.post('/login', authController.login);
+router.post('/refresh', authController.refreshToken);
 router.get('/user/:id', verifyToken, authController.getUserById); // New endpoint
 
 module.exports = router;

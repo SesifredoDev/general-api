@@ -54,6 +54,7 @@ exports.register = async (req, res) => {
     name,
     email,
     password: hashedPassword,
+    type: "",
     avatar: "",
     icon:  "",
     level: 1,
@@ -77,13 +78,51 @@ exports.login = async (req, res) => {
   const match = await bcrypt.compare(password, user.password);
   if (!match) return res.status(400).json({ message: 'Invalid credentials' });
 
-  const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-  res.json({ token,
-    
-  userId: user._id
-   });
-};
+  const token = jwt.sign(
+    { userId: user._id },
+    process.env.JWT_SECRET,
+    { expiresIn: '1h' }
+  );
 
+  const refreshToken = jwt.sign(
+    { userId: user._id },
+    process.env.JWT_REFRESH_SECRET,
+    { expiresIn: '7d' }
+  );
+
+  // Save refresh token in DB
+  user.refreshToken = refreshToken;
+  await user.save();
+
+  res.json({
+    token,
+    refreshToken,
+    userId: user._id
+  });
+};
+exports.refreshToken = async (req, res) => {
+  const { refreshToken } = req.body;
+  if (!refreshToken) return res.status(401).json({ message: 'Refresh token required' });
+
+  try {
+    const payload = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+    const user = await User.findById(payload.userId);
+    if (!user || user.refreshToken !== refreshToken) {
+      return res.status(403).json({ message: 'Invalid refresh token' });
+    }
+
+    // Issue new access token
+    const newToken = jwt.sign(
+      { userId: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+
+    res.json({ token: newToken });
+  } catch (err) {
+    return res.status(403).json({ message: 'Invalid or expired refresh token' });
+  }
+};
 exports.getUserById = async (req, res) => {
   const { id } = req.params;
   try {
