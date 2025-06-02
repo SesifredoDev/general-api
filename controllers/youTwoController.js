@@ -16,7 +16,7 @@ function isSameDay(dateToCheck) {
 
 
 exports.newEntry = async (req, res) => {
-  const { input, id} = req.body;
+  const { input, id } = req.body;
 
   try {
     const user = await User.findById(id).select('-password');
@@ -40,9 +40,12 @@ exports.newEntry = async (req, res) => {
 
     // Accumulate XP
     predictionResults.forEach(prediction => {
-      const statKey = (prediction.predictedStat).toLowerCase();
-      if (changes[statKey]) {
-        changes[statKey].xp += Math.round(prediction.predictedDifficulty);
+      const rawKey = prediction?.predictedStat;
+      if (typeof rawKey === 'string') {
+        const statKey = rawKey.toLowerCase();
+        if (changes[statKey]) {
+          changes[statKey].xp += Math.round(prediction.predictedDifficulty || 0);
+        }
       }
     });
 
