@@ -12,6 +12,20 @@ const { window } = new JSDOM();
 global.window = window;
 global.document = window.document;
 
+const width = 512;
+const height = 512;
+
+let context;
+try {
+  context = require('gl')(width, height, { preserveDrawingBuffer: true });
+  if (!context) throw new Error('Failed to create WebGL context');
+} catch (e) {
+  console.error('WebGL context creation failed:', e);
+  throw e;
+}
+
+const renderer = new THREE.WebGLRenderer({ context });
+
 async function renderHeadshot(avatarURL, outputPath) {
   const width = 512;
   const height = 512;
