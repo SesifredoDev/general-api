@@ -119,3 +119,52 @@ exports.newEntry = async (req, res) => {
     res.status(400).json({ message: 'Invalid ID format or server error' });
   }
 };
+
+exports.sendFriendRequest = async (req, res) => {
+  const { fromId, toId } = req.body;
+
+  if (fromId === toId) return res.status(400).json({ message: 'Cannot add yourself' });
+
+  const fromUser = await User.findById(fromId);
+  const toUser = await User.findById(toId);
+
+  if (!fromUser || !toUser) return res.status(404).json({ message: 'User not found' });
+
+  if (toUser.friendRequests.includes(fromId) || toUser.friends.includes(fromId))
+    return res.status(400).json({ message: 'Friend request already sent or already friends' });
+
+  toUser.friendRequests.push(fromId);
+  await toUser.save();
+
+  res.json({ message: 'Friend request sent' });
+};
+
+
+exports.acceptFriendRequest = async (req, res) => {
+  const { userId, requesterId } = req.body;
+
+  const user = await User.findById(userId);
+  const requester = await User.findById(requesterId);
+
+  if (!user || !requester) return res.status(404).json({ message: 'User not found' });
+
+  if (!user.friendRequests.includes(requesterId))
+    return res.status(400).json({ message: 'No friend request from this user' });
+
+  user.friendRequests = user.friendRequests.filter(id => id.toString() !== requesterId);
+  user.friends.push(requesterId);
+  requester.friends.push(userId);
+
+  await user.save();
+  await requester.save();
+
+  res.json({ message: 'Friend request accepted' });
+};
+exports.getFriends = async (req, res) => {
+  const { userId } = req.params;
+
+  const user = await User.findById(userId).populate('friends', 'username avatar icon stats');
+  if (!user) return res.status(404).json({ message: 'User not found' });
+
+  res.json(user.friends);
+};

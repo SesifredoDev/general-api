@@ -8,6 +8,6 @@ router.post('/login', authController.login);
 router.post('/logout', authController.logout);
 router.post('/refresh', authController.refreshToken);
 router.get('/user/:id', verifyToken, authController.getUserById); // New endpoint
-router.get('/user-by-username/:username', userController.getUserByUsername);
+router.get('/user-by-username/:username', authController.getUserByUsername);
 
 module.exports = router;
