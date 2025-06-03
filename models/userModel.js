@@ -27,6 +27,7 @@ const userSchema = new mongoose.Schema({
     con: statBlockSchema,
   },
   lastEntry:String,
+  refreshTokens: [String]
 });
 
 
