@@ -97,6 +97,7 @@ exports.refreshToken = async (req, res) => {
 
   try {
     const payload = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+    console.log(refreshToken,  payload.userId);
     const user = await User.findById(payload.userId);
     if (!user || !user.refreshTokens.includes(refreshToken)) {
       return res.status(403).json({ message: 'Invalid refresh token' });
