@@ -2,7 +2,9 @@ const User = require('../models/userModel');
 
 exports.updateAvatar = async (req, res) => {
     const { avatarURL, id } = req.body;
+    
     try {
+        
         const user = await User.findById(id).select('-password');
         if (!user) return res.status(404).json({ message: 'User not found' });
         if(avatarURL.includes("readyplayer.me")){
@@ -18,4 +20,4 @@ exports.updateAvatar = async (req, res) => {
     console.error(err);
     res.status(400).json({ message: 'Invalid ID format or server error' });
   }
-}
+}   
