@@ -135,3 +135,15 @@ exports.getUserById = async (req, res) => {
     res.status(400).json({ message: 'Invalid ID format' });
   }
 };
+
+
+exports.getUserByUsername = async (req, res) => {
+  const { username } = req.params;
+  try {
+    const user = await User.findOne({ username }).select('_id username');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    res.json(user);
+  } catch {
+    res.status(400).json({ message: 'Server error' });
+  }
+};

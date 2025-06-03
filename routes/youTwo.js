@@ -12,4 +12,5 @@ router.post('/friend-request',verifyToken, youTwoController.sendFriendRequest);
 router.post('/accept-friend', verifyToken,youTwoController.acceptFriendRequest);
 router.get('/:userId/friends',verifyToken, youTwoController.getFriends);
 
+
 module.exports  =  router;
