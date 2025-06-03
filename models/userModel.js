@@ -27,7 +27,9 @@ const userSchema = new mongoose.Schema({
     con: statBlockSchema,
   },
   lastEntry:String,
-  refreshTokens: [String]
+  refreshTokens: [String],
+  friends: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  friendRequests: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
 });
 
 
