@@ -93,30 +93,18 @@ exports.login = async (req, res) => {
 };
 exports.refreshToken = async (req, res) => {
   const { refreshToken } = req.body;
-  console.log("Received refresh token:", refreshToken); // ✅
-
   if (!refreshToken) return res.status(401).json({ message: 'Refresh token required' });
 
   try {
     const payload = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
     const user = await User.findById(payload.userId);
-
-    console.log("User found:", user?.email); // ✅
     if (!user || !user.refreshTokens.includes(refreshToken)) {
-      console.warn("Token mismatch or user not found");
       return res.status(403).json({ message: 'Invalid refresh token' });
     }
 
-    const newToken = jwt.sign(
-      { userId: user._id },
-      process.env.JWT_SECRET,
-      { expiresIn: '1h' }
-    );
-
-    console.log("Issuing new token:", newToken); // ✅
-    return res.json({ token: newToken }); // ✅ Must send this
+    const newToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    res.json({ token: newToken });
   } catch (err) {
-    console.error("JWT refresh verify failed:", err.message);
     return res.status(403).json({ message: 'Invalid or expired refresh token' });
   }
 };
