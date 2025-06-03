@@ -99,6 +99,7 @@ exports.newEntry = async (req, res) => {
     user.level = user.level + userLevelUpCount;
     user.xp = userXP;
     user.lastEntry = new Date();
+    user.steak += 1;
 
     await user.save();
 
