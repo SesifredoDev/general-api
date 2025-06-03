@@ -163,7 +163,7 @@ exports.acceptFriendRequest = async (req, res) => {
 exports.getFriends = async (req, res) => {
   const { userId } = req.params;
 
-  const user = await User.findById(userId).populate('friends', 'username avatar icon stats');
+  const user = await User.findById(userId).populate('friends', 'username avatar icon stats level class');
   if (!user) return res.status(404).json({ message: 'User not found' });
 
   res.json(user.friends);
