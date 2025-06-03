@@ -29,7 +29,8 @@
     "gl": "^8.1.6",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.15.1",
-    "node-nlp": "^5.0.0-alpha.5"
+    "node-nlp": "^5.0.0-alpha.5",
+    "puppeteer": "^24.10.0"
   },
   "devDependencies": {
     "jest": "^29.7.0"
