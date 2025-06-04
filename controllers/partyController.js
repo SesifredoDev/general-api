@@ -3,9 +3,10 @@ const User = require('../models/userModel');
 const crypto = require('crypto');
 
 exports.createParty = async (req, res) => {
-  const { name, userId } = req.body;
+  const { name, icon, userId } = req.body;
 
   const user = await User.findById(userId);
+  console.log(user)
   if (!user || user.party) {
     return res.status(400).json({ message: 'User already in a party or not found' });
   }
@@ -14,6 +15,7 @@ exports.createParty = async (req, res) => {
 
   const party = new Party({
     name,
+    icon, // ✅ Include the icon here
     joinCode,
     users: [user._id],
   });
@@ -23,7 +25,9 @@ exports.createParty = async (req, res) => {
   user.party = party._id;
   await user.save();
 
-  res.status(201).json({ message: 'Party created', party });
+  const populatedParty = await Party.findById(party._id).populate('users', 'username avatar icon');
+
+  res.status(201).json({ message: 'Party created', party: populatedParty, user });
 };
 
 exports.joinParty = async (req, res) => {
@@ -47,7 +51,7 @@ exports.joinParty = async (req, res) => {
   user.party = party._id;
   await user.save();
 
-  res.json({ message: 'Joined party', party });
+  res.json({ message: 'Joined party', party, user });
 };
 
 exports.leaveParty = async (req, res) => {
@@ -67,7 +71,7 @@ exports.leaveParty = async (req, res) => {
   user.party = null;
   await user.save();
 
-  res.json({ message: 'Left party' });
+  res.json({ message: 'Left party', user });
 };
 
 exports.updateParty = async (req, res) => {
@@ -87,7 +91,7 @@ exports.updateParty = async (req, res) => {
 exports.getParty = async (req, res) => {
   const { partyId } = req.params;
 
-  const party = await Party.findById(partyId).populate('users', 'username avatar level class');
+  const party = await Party.findById(partyId).populate('users', 'username avatar level class stats');
   if (!party) return res.status(404).json({ message: 'Party not found' });
 
   res.json(party);

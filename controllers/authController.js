@@ -63,6 +63,7 @@ exports.register = async (req, res) => {
     stats,
     lastEntry: "",
     steak: 0,
+    party: null
   });
 
   await newUser.save();

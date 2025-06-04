@@ -22,4 +22,5 @@ router.post('/party/update', verifyToken, partyController.updateParty);
 router.get('/party/:partyId', verifyToken, partyController.getParty);
 
 
+
 module.exports  =  router;

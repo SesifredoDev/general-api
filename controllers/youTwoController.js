@@ -21,7 +21,7 @@ exports.train = async (req, res) => {
 
 exports.newEntry = async (req, res) => {
   const { input, id } = req.body;
-
+  console.log(input)
   try {
     const user = await User.findById(id).select('-password');
     if (!user) return res.status(404).json({ message: 'User not found' });
