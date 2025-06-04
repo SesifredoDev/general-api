@@ -1,0 +1,10 @@
+const mongoose = require('mongoose');
+
+const partySchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  joinCode: { type: String, required: true, unique: true },
+  level: { type: Number, default: 1 },
+  users: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
+});
+
+module.exports = mongoose.model('Party', partySchema);
