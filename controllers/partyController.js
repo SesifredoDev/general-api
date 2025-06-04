@@ -25,7 +25,7 @@ exports.createParty = async (req, res) => {
   user.party = party._id;
   await user.save();
 
-  const populatedParty = await Party.findById(party._id).populate('users', 'username avatar icon');
+  const populatedParty = await Party.findById(party._id).populate('users', 'username avatar stats level class');
 
   res.status(201).json({ message: 'Party created', party: populatedParty, user });
 };
