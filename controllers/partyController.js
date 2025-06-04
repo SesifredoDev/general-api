@@ -71,7 +71,7 @@ exports.leaveParty = async (req, res) => {
   user.party = null;
   await user.save();
 
-  res.json({ message: 'Left party', user });
+  res.json({ message: 'Left party' });
 };
 
 exports.updateParty = async (req, res) => {
@@ -93,6 +93,17 @@ exports.getParty = async (req, res) => {
 
   const party = await Party.findById(partyId).populate('users', 'username avatar level class stats');
   if (!party) return res.status(404).json({ message: 'Party not found' });
+
+  // ✅ Calculate average level
+  if (party.users.length > 0) {
+    const totalLevel = party.users.reduce((sum, user) => sum + (user.level || 0), 0);
+    party.level = Math.floor(totalLevel / party.users.length);
+  } else {
+    party.level = 1; // fallback if no users
+  }
+
+  // ✅ Save updated party level
+  await party.save();
 
   res.json(party);
 };
