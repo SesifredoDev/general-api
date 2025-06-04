@@ -27,7 +27,7 @@ exports.createParty = async (req, res) => {
 
   const populatedParty = await Party.findById(party._id).populate('users', 'username avatar stats level class');
 
-  res.status(201).json({ message: 'Party created', party: populatedParty, user });
+  res.status(201).json({ message: 'Party created', party: populatedParty, user: user });
 };
 
 exports.joinParty = async (req, res) => {
@@ -51,7 +51,9 @@ exports.joinParty = async (req, res) => {
   user.party = party._id;
   await user.save();
 
-  res.json({ message: 'Joined party', party, user });
+  const populatedParty = await Party.findById(party._id).populate('users', 'username avatar stats level class');
+
+  res.json({ message: 'Joined party', party: populatedParty, user });
 };
 
 exports.leaveParty = async (req, res) => {
