@@ -60,10 +60,13 @@ exports.register = async (req, res) => {
     class: "",
     level: 1,
     xp: 0,
+    hp: 5,
     stats,
     lastEntry: "",
     steak: 0,
-    party: null
+    party: null,
+    armour:10,
+    evasion:5,
   });
 
   await newUser.save();

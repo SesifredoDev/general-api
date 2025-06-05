@@ -18,6 +18,9 @@ const userSchema = new mongoose.Schema({
   class: String,
   type:Number,
   xp:Number,
+  hp:Number,
+  armour:Number,
+  athletics: Number,
   party: {type: mongoose.Schema.Types.ObjectId, ref: 'Party'},
   stats: {
     str: statBlockSchema,

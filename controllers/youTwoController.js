@@ -2,6 +2,19 @@ const User = require('../models/userModel');
 const predict = require("../rpgML/predict");
 const train = require("../rpgML/train");
 const rpgUtil = require("../rpgML/utils");
+const fs = require('fs');
+const path = require('path');
+
+const dicePath = path.join(__dirname, '../assets/dice.json');
+
+// Load dice table once
+let diceTable = [];
+try {
+  const rawData = fs.readFileSync(dicePath);
+  diceTable = JSON.parse(rawData);
+} catch (err) {
+  console.error('Failed to load dice.json:', err);
+}
 
 function isSameDay(dateToCheck) {
   const today = new Date();
@@ -25,7 +38,7 @@ exports.newEntry = async (req, res) => {
   try {
     const user = await User.findById(id).select('-password');
     if (!user) return res.status(404).json({ message: 'User not found' });
-    
+
 
     if (isSameDay(user.lastEntry)) {
       return res.status(403).json({ message: 'Cannot make 2 entries on the same day.' });
@@ -52,9 +65,9 @@ exports.newEntry = async (req, res) => {
 
     const originalStats = JSON.parse(JSON.stringify(user.stats));
 
-    let userXP = user.xp||0;
+    let userXP = user.xp || 0;
     let changeXP = 0;
-    let userLevelUpCount = 0;  
+    let userLevelUpCount = 0;
 
     // Accumulate XP to each stat based on predictions
     predictionResults.forEach(prediction => {
@@ -85,12 +98,12 @@ exports.newEntry = async (req, res) => {
       stat.level = newLevel;
     }
 
-    
+
 
 
     // User Level Ups
     userXP += changeXP;
-    while(userXP >= 6000){
+    while (userXP >= 6000) {
       userLevelUpCount += 1;
       userXP -= 6000;
     }
@@ -101,6 +114,10 @@ exports.newEntry = async (req, res) => {
     user.lastEntry = new Date();
     user.steak += 1;
 
+
+    if(user.userLevelUpCount  >=1){
+      user  = levelUp(user);
+    }
     await user.save();
 
     const result = {
@@ -169,3 +186,76 @@ exports.getFriends = async (req, res) => {
 
   res.json(user.friends);
 };
+
+
+
+
+function getDiceExpressionByValue(value) {
+  const dicePath = path.join(__dirname, '../assets/dice.json');
+
+  let diceTable;
+  try {
+    const rawData = fs.readFileSync(dicePath, 'utf-8');
+    diceTable = JSON.parse(rawData);
+  } catch (err) {
+    console.error('Error reading dice.json:', err);
+    return null;
+  }
+
+  const match = diceTable.find(entry => entry.value === value);
+  return match ? match.dice : "3d20";
+}
+function parseAndRollDiceExpression(expression) {
+  const tokens = expression.replace(/\s+/g, '').match(/[\d]*d\d+|\d+|[+-]/gi);
+  if (!tokens) {
+    throw new Error(`Invalid dice expression: ${expression}`);
+  }
+
+  let total = 0;
+  let rolls = [];
+  let currentOperator = '+';
+
+  for (let token of tokens) {
+    if (token === '+' || token === '-') {
+      currentOperator = token;
+      continue;
+    }
+
+    let value = 0;
+    let individualRolls = [];
+
+    if (token.includes('d')) {
+      const [countStr, sidesStr] = token.toLowerCase().split('d');
+      const count = parseInt(countStr) || 1;
+      const sides = parseInt(sidesStr);
+
+      for (let i = 0; i < count; i++) {
+        const roll = Math.floor(Math.random() * sides) + 1;
+        individualRolls.push(roll);
+        value += roll;
+      }
+    } else {
+      value = parseInt(token);
+      individualRolls.push(value);
+    }
+
+    total = currentOperator === '+' ? total + value : total - value;
+
+    rolls.push({
+      token,
+      operator: currentOperator,
+      rolls: individualRolls,
+      value
+    });
+  }
+
+    return total
+}
+
+function levelUp(user){
+  user.hp = 5+ parseAndRollDiceExpression(getDiceExpressionByValue(user.stat.con) + getDiceExpressionByValue(user.level) );
+  user.armour = 5   + parseAndRollDiceExpression(getDiceExpressionByValue(user.stat.dex) + getDiceExpressionByValue(user.stat.str) );
+  user.evasion  = 5  +  parseAndRollDiceExpression(getDiceExpressionByValue(user.stat.dex));
+
+  return user;
+}
