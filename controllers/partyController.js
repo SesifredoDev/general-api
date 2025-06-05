@@ -15,6 +15,7 @@ exports.createParty = async (req, res) => {
 
   const party = new Party({
     name,
+    manager:user._id,
     icon, // ✅ Include the icon here
     joinCode,
     users: [user._id],
@@ -26,6 +27,7 @@ exports.createParty = async (req, res) => {
   await user.save();
 
   const populatedParty = await Party.findById(party._id).populate('users', 'username avatar stats level class');
+  populatedParty.manager  = user
 
   res.status(201).json({ message: 'Party created', party: populatedParty, user: user });
 };
@@ -51,8 +53,7 @@ exports.joinParty = async (req, res) => {
   user.party = party._id;
   await user.save();
 
-  const populatedParty = await Party.findById(party._id).populate('users', 'username avatar stats level class');
-
+  const populatedParty = await Party.findById(party._id).populate('users', 'username avatar stats level class').populate('manager', 'id username avatar');
   res.json({ message: 'Joined party', party: populatedParty, user });
 };
 
@@ -93,7 +94,7 @@ exports.updateParty = async (req, res) => {
 exports.getParty = async (req, res) => {
   const { partyId } = req.params;
 
-  const party = await Party.findById(partyId).populate('users', 'username avatar level class stats');
+  const party = await Party.findById(partyId).populate('users', 'username avatar stats level class').populate('manager', 'id username avatar');
   if (!party) return res.status(404).json({ message: 'Party not found' });
 
   // ✅ Calculate average level
