@@ -2,6 +2,7 @@ const Weapon = require('../models/weaponModel');
 const Spell = require('../models/spellModel');
 const Item = require('../models/itemModel');
 const StarterPack = require('../models/starterPackModel');
+const User = require('../models/userModel');
 
 // Helper to get a random item by rarity percentage
 function getRandomByRarity(items) {
