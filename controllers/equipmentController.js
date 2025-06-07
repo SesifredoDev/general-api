@@ -126,11 +126,11 @@ exports.selectStarterPack = async (req, res) => {
 
   await user.save();
   const populatedUser = await user
-        .populate('weapons')
-        .populate('spells')
-        .populate('items')
-        .select('-password');
-  
+    .populate('weapons')
+    .populate('spells')
+    .populate('items')
+    .select('-password');
+
   const finalUser = processUserEquipment(populatedUser);
 
   res.json({ message: 'Starter pack applied', finalUser });
@@ -158,35 +158,42 @@ function attachDiceToActions(actions = [], userStats = {}) {
     const statVal = userStats[statKey]?.level || 1; // fallback to 1
     return {
       ...action,
-      dice: getDiceExpressionByValue(statVal+ action?.mod)
+      dice: getDiceExpressionByValue(statVal + action?.mod)
     };
   });
 }
 
-  exports.processUserEquipment =  (user) => {
-  const processed = {
-    weapons: [],
-    spells: [],
-    items: []
-  };
+exports.processUserEquipment = (user) => {
+  const userObj = user.toObject(); // deep clone with populated fields
+  const stats = userObj.stats;
 
-  for (const weapon of user.weapons || []) {
-    const newWeapon = { ...weapon.toObject() };
-    newWeapon.actions = attachDiceToActions(newWeapon.actions, user.stats);
-    processed.weapons.push(newWeapon);
+  if (Array.isArray(userObj.weapons)) {
+    userObj.weapons = userObj.weapons.map(w => ({
+      ...w,
+      actions: attachDiceToActions(w.actions, stats)
+    }));
   }
 
-  for (const spell of user.spells || []) {
-    const newSpell = { ...spell.toObject() };
-    newSpell.actions = attachDiceToActions(newSpell.actions, user.stats);
-    processed.spells.push(newSpell);
+  if (Array.isArray(userObj.spells)) {
+    userObj.spells = userObj.spells.map(s => ({
+      ...s,
+      actions: attachDiceToActions(s.actions, stats)
+    }));
   }
 
-  for (const item of user.items || []) {
-    const newItem = { ...item.toObject() };
-    newItem.effect.dice = getDiceExpressionByValue(user.stats[item.effect.stat]?.level || 1);
-    processed.items.push(newItem);
+  if (Array.isArray(userObj.items)) {
+    userObj.items = userObj.items.map(i => {
+      const statKey = i.effect?.stat;
+      const statLevel = stats[statKey]?.level || 1;
+      return {
+        ...i,
+        effect: {
+          ...i.effect,
+          dice: getDiceExpressionByValue(statLevel)
+        }
+      };
+    });
   }
 
-  return processed;
+  return userObj;
 }
