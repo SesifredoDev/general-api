@@ -139,7 +139,7 @@ exports.newEntry = async (req, res) => {
 
     const finalUser = processUserEquipment(populatedUser);
     const result = {
-      finalUser,
+      user:finalUser,
       changes,
       origins: originalStats,
       ...(userLevelUpCount > 0 && {
