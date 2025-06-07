@@ -2,6 +2,8 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/userModel');
 
+const { processUserEquipment } = require('./equipmentController')
+
 exports.register = async (req, res) => {
   const { username, name, email, password, type } = req.body;
   console.log("body", req.body)
@@ -138,7 +140,15 @@ exports.getUserById = async (req, res) => {
   try {
     const user = await User.findById(id).select('-password'); // Don't return password
     if (!user) return res.status(404).json({ message: 'User not found' });
-    res.json(user);
+    const populatedUser = await user
+      .populate('weapons')
+      .populate('spells')
+      .populate('items')
+      .select('-password');
+
+    const finalUser = processUserEquipment(populatedUser);
+    res.json(finalUser);
+    
   } catch (err) {
     res.status(400).json({ message: 'Invalid ID format' });
   }
