@@ -39,7 +39,11 @@ exports.newEntry = async (req, res) => {
   const { input, id } = req.body;
   console.log(input)
   try {
-    const user = await User.findById(id).select('-password');
+    const user = await User.findById(id)
+      .populate('weapons')
+      .populate('spells')
+      .populate('items')
+      .select('-password');
     if (!user) return res.status(404).json({ message: 'User not found' });
 
 
@@ -127,11 +131,7 @@ exports.newEntry = async (req, res) => {
       user = levelUp(user);
     }
     await user.save();
-    const populatedUser = await User.findById(userId)
-      .populate('weapons')
-      .populate('spells')
-      .populate('items')
-      .select('-password');
+    const populatedUser = await user;
 
     const finalUser = processUserEquipment(populatedUser);
     const result = {
