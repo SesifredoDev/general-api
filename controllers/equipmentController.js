@@ -4,6 +4,9 @@ const Item = require('../models/itemModel');
 const StarterPack = require('../models/starterPackModel');
 const User = require('../models/userModel');
 
+const fs = require('fs');
+const path = require('path');
+
 // Helper to get a random item by rarity percentage
 function getRandomByRarity(items) {
   const total = items.reduce((sum, item) => sum + (item.rarity?.percentage || 0), 0);
@@ -133,6 +136,21 @@ exports.selectStarterPack = async (req, res) => {
   res.json({ message: 'Starter pack applied', finalUser });
 };
 
+function getDiceExpressionByValue(value) {
+  const dicePath = path.join(__dirname, '../assets/dice.json');
+
+  let diceTable;
+  try {
+    const rawData = fs.readFileSync(dicePath, 'utf-8');
+    diceTable = JSON.parse(rawData);
+  } catch (err) {
+    console.error('Error reading dice.json:', err);
+    return null;
+  }
+
+  const match = diceTable.find(entry => entry.value === value);
+  return match ? match.dice : "3d20";
+}
 
 function attachDiceToActions(actions = [], userStats = {}) {
   return actions.map(action => {
