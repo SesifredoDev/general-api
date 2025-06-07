@@ -5,7 +5,7 @@ const verifyToken = require('../middleware/authMiddleware');
 const youTwoController  = require('../controllers/youTwoController');
 const avatarController = require('../controllers/avatarController');
 const partyController = require('../controllers/partyController');
-const equipmentRoutes = require('./equipmentRoutes'); // ⬅️ Add this
+const equipmentRoutes = require('./equipment');
 
 // Main routes
 router.get('/train', youTwoController.train);
@@ -23,7 +23,7 @@ router.post('/party/leave', verifyToken, partyController.leaveParty);
 router.post('/party/update', verifyToken, partyController.updateParty);
 router.get('/party/:partyId', verifyToken, partyController.getParty);
 
-// Equipment routes ✅
+// Equipment routes
 router.use('/equipment', equipmentRoutes);
 
 module.exports = router;
