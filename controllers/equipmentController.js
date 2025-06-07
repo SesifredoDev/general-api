@@ -65,20 +65,34 @@ exports.getRandom = model => async (req, res) => {
 };
 
 
-// Add a starter pack (admin)
 exports.addStarterPack = async (req, res) => {
+  try {
     if (!req.body) {
-    return res.status(400).json({ message: "Missing request body" });
+      return res.status(400).json({ message: "Missing request body" });
+    }
+
+    const { name, description, items = [], weapons = [], spells = [] } = req.body;
+
+    const savedItems = await Item.insertMany(items);
+    const savedWeapons = await Weapon.insertMany(weapons);
+    const savedSpells = await Spell.insertMany(spells);
+
+    const newPack = new StarterPack({
+      name,
+      description,
+      items: savedItems.map(i => i._id),
+      weapons: savedWeapons.map(w => w._id),
+      spells: savedSpells.map(s => s._id),
+    });
+
+    await newPack.save();
+
+    res.status(201).json({ message: 'Starter pack created', pack: newPack });
+  } catch (err) {
+    console.error('Error creating starter pack:', err);
+    res.status(500).json({ message: 'Failed to create starter pack', error: err.message });
   }
-
-  const { name, description, items, weapons, spells } = req.body;
-
-  const newPack = new StarterPack({ name, description, weapons, spells, items });
-  await newPack.save();
-
-  res.status(201).json({ message: 'Starter pack created', pack: newPack });
 };
-
 // Get all starter packs (for user to choose)
 exports.getStarterPacks = async (req, res) => {
   const packs = await StarterPack.find()
