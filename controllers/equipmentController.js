@@ -1,6 +1,7 @@
 const Weapon = require('../models/weaponModel');
 const Spell = require('../models/spellModel');
 const Item = require('../models/itemModel');
+const StarterPack = require('../models/starterPackModel');
 
 // Helper to get a random item by rarity percentage
 function getRandomByRarity(items) {
@@ -65,7 +66,11 @@ exports.getRandom = model => async (req, res) => {
 
 // Add a starter pack (admin)
 exports.addStarterPack = async (req, res) => {
-  const { name, description, weapons, spells, items } = req.body;
+    if (!req.body) {
+    return res.status(400).json({ message: "Missing request body" });
+  }
+
+  const { name, description, items, weapons, spells } = req.body;
 
   const newPack = new StarterPack({ name, description, weapons, spells, items });
   await newPack.save();
