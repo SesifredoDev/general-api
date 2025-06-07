@@ -140,7 +140,7 @@ exports.getUserById = async (req, res) => {
   try {
     const user = await User.findById(id).select('-password'); // Don't return password
     if (!user) return res.status(404).json({ message: 'User not found' });
-    const populatedUser = await user
+    const populatedUser = user
       .populate('weapons')
       .populate('spells')
       .populate('items')
