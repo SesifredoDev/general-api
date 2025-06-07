@@ -32,4 +32,12 @@ router.post('/spells/batch', controller.addBatch(Spell));
 router.post('/items/batch', controller.addBatch(Item));
 
 
+
+// Packs
+router.get('/packs', controller.getStarterPacks);
+router.post('/packs/select', controller.selectStarterPack);
+
+// Admin route
+router.post('/packs', controller.addStarterPack);
+
 module.exports = router;

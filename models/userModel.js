@@ -36,7 +36,9 @@ const userSchema = new mongoose.Schema({
   friendRequests: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   weapons: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Weapon' }],
   spells: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Spell' }],
-  items: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Item' }]
+  items: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Item' }],
+  starterPackSelected: { type: Boolean, default: false },
+
 });
 
 

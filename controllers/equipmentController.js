@@ -61,3 +61,47 @@ exports.getRandom = model => async (req, res) => {
   const selected = getRandomByRarity(items);
   res.json(selected);
 };
+
+
+// Add a starter pack (admin)
+exports.addStarterPack = async (req, res) => {
+  const { name, description, weapons, spells, items } = req.body;
+
+  const newPack = new StarterPack({ name, description, weapons, spells, items });
+  await newPack.save();
+
+  res.status(201).json({ message: 'Starter pack created', pack: newPack });
+};
+
+// Get all starter packs (for user to choose)
+exports.getStarterPacks = async (req, res) => {
+  const packs = await StarterPack.find()
+    .populate('weapons')
+    .populate('spells')
+    .populate('items');
+  res.json(packs);
+};
+
+// User picks a starter pack
+exports.selectStarterPack = async (req, res) => {
+  const { userId, packId } = req.body;
+
+  const user = await User.findById(userId);
+  if (!user) return res.status(404).json({ message: 'User not found' });
+
+  if (user.starterPackSelected) {
+    return res.status(400).json({ message: 'Starter pack already selected' });
+  }
+
+  const pack = await StarterPack.findById(packId);
+  if (!pack) return res.status(404).json({ message: 'Pack not found' });
+
+  user.weapons.push(...pack.weapons);
+  user.spells.push(...pack.spells);
+  user.items.push(...pack.items);
+  user.starterPackSelected = true;
+
+  await user.save();
+
+  res.json({ message: 'Starter pack applied', user });
+};
