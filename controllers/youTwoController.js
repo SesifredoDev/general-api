@@ -131,7 +131,11 @@ exports.newEntry = async (req, res) => {
       user = levelUp(user);
     }
     await user.save();
-    const populatedUser = await user;
+    const populatedUser = await User.findById(id)
+      .populate('weapons')
+      .populate('spells')
+      .populate('items')
+      .select('-password');
 
     const finalUser = processUserEquipment(populatedUser);
     const result = {
