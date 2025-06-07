@@ -16,12 +16,12 @@ const userSchema = new mongoose.Schema({
   icon: String,
   level: Number,
   class: String,
-  type:Number,
-  xp:Number,
-  hp:Number,
-  armour:Number,
+  type: Number,
+  xp: Number,
+  hp: Number,
+  armour: Number,
   evasion: Number,
-  party: {type: mongoose.Schema.Types.ObjectId, ref: 'Party'},
+  party: { type: mongoose.Schema.Types.ObjectId, ref: 'Party' },
   stats: {
     str: statBlockSchema,
     int: statBlockSchema,
@@ -30,10 +30,13 @@ const userSchema = new mongoose.Schema({
     cha: statBlockSchema,
     con: statBlockSchema,
   },
-  lastEntry:String,
+  lastEntry: String,
   refreshTokens: [String],
   friends: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-  friendRequests: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
+  friendRequests: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  weapons: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Weapon' }],
+  spells: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Spell' }],
+  items: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Item' }]
 });
 
 

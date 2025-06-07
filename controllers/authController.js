@@ -65,8 +65,11 @@ exports.register = async (req, res) => {
     lastEntry: "",
     steak: 0,
     party: null,
-    armour:10,
-    evasion:5,
+    armour: 10,
+    evasion: 5,
+    weapons: [],
+    spells: [],
+    items: []
   });
 
   await newUser.save();
@@ -102,7 +105,7 @@ exports.refreshToken = async (req, res) => {
 
   try {
     const payload = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
-    console.log(refreshToken,  payload.userId);
+    console.log(refreshToken, payload.userId);
     const user = await User.findById(payload.userId);
     if (!user || !user.refreshTokens.includes(refreshToken)) {
       return res.status(403).json({ message: 'Invalid refresh token' });

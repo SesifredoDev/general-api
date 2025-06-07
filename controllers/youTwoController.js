@@ -2,6 +2,9 @@ const User = require('../models/userModel');
 const predict = require("../rpgML/predict");
 const train = require("../rpgML/train");
 const rpgUtil = require("../rpgML/utils");
+const Weapon = require('../models/weaponModel');
+const Spell = require('../models/spellModel');
+const Item = require('../models/itemModel');
 const fs = require('fs');
 const path = require('path');
 
@@ -114,9 +117,14 @@ exports.newEntry = async (req, res) => {
     user.lastEntry = new Date();
     user.steak += 1;
 
+    // Try to get a random reward
+    const reward = await tryGrantReward(user);
+    await user.save();  // now includes added item if any
 
-    if(user.userLevelUpCount  >=1){
-      user  = levelUp(user);
+
+
+    if (user.userLevelUpCount >= 1) {
+      user = levelUp(user);
     }
     await user.save();
 
@@ -128,8 +136,15 @@ exports.newEntry = async (req, res) => {
         levelUp: {
           count: userLevelUpCount
         }
+      }),
+      ...(reward && {
+        reward: {
+          type: reward.type,
+          item: reward.data
+        }
       })
     };
+
 
     res.status(200).json(result);
   } catch (err) {
@@ -249,13 +264,60 @@ function parseAndRollDiceExpression(expression) {
     });
   }
 
-    return total
+  return total
 }
 
-function levelUp(user){
-  user.hp = 5+ parseAndRollDiceExpression(getDiceExpressionByValue(user.stat.con) + getDiceExpressionByValue(user.level) );
-  user.armour = 5   + parseAndRollDiceExpression(getDiceExpressionByValue(user.stat.dex) + getDiceExpressionByValue(user.stat.str) );
-  user.evasion  = 5  +  parseAndRollDiceExpression(getDiceExpressionByValue(user.stat.dex));
+function levelUp(user) {
+  user.hp = 5 + parseAndRollDiceExpression(getDiceExpressionByValue(user.stat.con) + getDiceExpressionByValue(user.level));
+  user.armour = 5 + parseAndRollDiceExpression(getDiceExpressionByValue(user.stat.dex) + getDiceExpressionByValue(user.stat.str));
+  user.evasion = 5 + parseAndRollDiceExpression(getDiceExpressionByValue(user.stat.dex));
 
   return user;
+}
+// Select item based on rarity
+function getRandomByRarity(list) {
+  const total = list.reduce((sum, obj) => sum + (obj.rarity?.percentage || 0), 0);
+  const rand = Math.random() * total;
+  let cumulative = 0;
+
+  for (const obj of list) {
+    cumulative += obj.rarity?.percentage || 0;
+    if (rand <= cumulative) return obj;
+  }
+
+  return null;
+}
+
+// ~20% chance to get a reward
+async function tryGrantReward(user) {
+  const roll = Math.random();
+  if (roll > 0.2) return null;
+
+  const types = ['weapon', 'spell', 'item'];
+  const chosenType = types[Math.floor(Math.random() * types.length)];
+
+  if (chosenType === 'weapon') {
+    const weapons = await Weapon.find();
+    const selected = getRandomByRarity(weapons);
+    if (selected) {
+      user.weapons.push(selected._id);
+      return { type: 'weapon', data: selected };
+    }
+  } else if (chosenType === 'spell') {
+    const spells = await Spell.find();
+    const selected = getRandomByRarity(spells);
+    if (selected) {
+      user.spells.push(selected._id);
+      return { type: 'spell', data: selected };
+    }
+  } else if (chosenType === 'item') {
+    const items = await Item.find();
+    const selected = getRandomByRarity(items);
+    if (selected) {
+      user.items.push(selected._id);
+      return { type: 'item', data: selected };
+    }
+  }
+
+  return null;
 }
