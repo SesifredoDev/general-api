@@ -156,9 +156,11 @@ function attachDiceToActions(actions = [], userStats = {}) {
   return actions.map(action => {
     const statKey = action.stat;
     const statVal = userStats[statKey]?.level || 1; // fallback to 1
+    const rawValue = statVal + (action?.mod || 0);
+    const minValue = Math.max(1, rawValue); 
     return {
       ...action,
-      dice: getDiceExpressionByValue(statVal + action?.mod)
+      dice: getDiceExpressionByValue(rawValue)
     };
   });
 }
