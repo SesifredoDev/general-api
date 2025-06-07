@@ -145,8 +145,8 @@ exports.getUserById = async (req, res) => {
       .populate('spells')
       .populate('items')
       .select('-password');
-
     const finalUser = processUserEquipment(populatedUser);
+    console.log(user, populatedUser, finalUser)
     res.json(finalUser);
     
   } catch (err) {
