@@ -7,7 +7,7 @@ const Spell = require('../models/spellModel');
 const Item = require('../models/itemModel');
 const fs = require('fs');
 const path = require('path');
-
+const { processUserEquipment } = require('./equipmentController')
 const dicePath = path.join(__dirname, '../assets/dice.json');
 
 // Load dice table once
@@ -127,9 +127,15 @@ exports.newEntry = async (req, res) => {
       user = levelUp(user);
     }
     await user.save();
+    const populatedUser = await User.findById(userId)
+      .populate('weapons')
+      .populate('spells')
+      .populate('items')
+      .select('-password');
 
+    const finalUser = processUserEquipment(populatedUser);
     const result = {
-      user,
+      finalUser,
       changes,
       origins: originalStats,
       ...(userLevelUpCount > 0 && {

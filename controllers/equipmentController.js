@@ -122,6 +122,53 @@ exports.selectStarterPack = async (req, res) => {
   user.starterPackSelected = true;
 
   await user.save();
+  const populatedUser = await user
+        .populate('weapons')
+        .populate('spells')
+        .populate('items')
+        .select('-password');
+  
+      const finalUser = processUserEquipment(populatedUser);
 
-  res.json({ message: 'Starter pack applied', user });
+  res.json({ message: 'Starter pack applied', finalUser });
 };
+
+
+function attachDiceToActions(actions = [], userStats = {}) {
+  return actions.map(action => {
+    const statKey = action.stat;
+    const statVal = userStats[statKey]?.level || 1; // fallback to 1
+    return {
+      ...action,
+      dice: getDiceExpressionByValue(statVal)
+    };
+  });
+}
+
+  exports.processUserEquipment =  (user) => {
+  const processed = {
+    weapons: [],
+    spells: [],
+    items: []
+  };
+
+  for (const weapon of user.weapons || []) {
+    const newWeapon = { ...weapon.toObject() };
+    newWeapon.actions = attachDiceToActions(newWeapon.actions, user.stats);
+    processed.weapons.push(newWeapon);
+  }
+
+  for (const spell of user.spells || []) {
+    const newSpell = { ...spell.toObject() };
+    newSpell.actions = attachDiceToActions(newSpell.actions, user.stats);
+    processed.spells.push(newSpell);
+  }
+
+  for (const item of user.items || []) {
+    const newItem = { ...item.toObject() };
+    newItem.effect.dice = getDiceExpressionByValue(user.stats[item.effect.stat]?.level || 1);
+    processed.items.push(newItem);
+  }
+
+  return processed;
+}
