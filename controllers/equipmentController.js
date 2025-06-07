@@ -131,7 +131,7 @@ exports.selectStarterPack = async (req, res) => {
         .populate('items')
         .select('-password');
   
-      const finalUser = processUserEquipment(populatedUser);
+  const finalUser = processUserEquipment(populatedUser);
 
   res.json({ message: 'Starter pack applied', finalUser });
 };
@@ -158,7 +158,7 @@ function attachDiceToActions(actions = [], userStats = {}) {
     const statVal = userStats[statKey]?.level || 1; // fallback to 1
     return {
       ...action,
-      dice: getDiceExpressionByValue(statVal)
+      dice: getDiceExpressionByValue(statVal+ action?.mod)
     };
   });
 }

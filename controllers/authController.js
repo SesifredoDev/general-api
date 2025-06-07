@@ -138,15 +138,14 @@ exports.logout = async (req, res) => {
 exports.getUserById = async (req, res) => {
   const { id } = req.params;
   try {
-    const user = await User.findById(id).select('-password'); // Don't return password
-    if (!user) return res.status(404).json({ message: 'User not found' });
-    const populatedUser = user
+    const user = await User.findById(id)
       .populate('weapons')
       .populate('spells')
       .populate('items')
       .select('-password');
-    const finalUser = processUserEquipment(populatedUser);
-    console.log(user, populatedUser, finalUser)
+
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    const finalUser = processUserEquipment(user);
     res.json(finalUser);
     
   } catch (err) {
