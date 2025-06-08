@@ -121,6 +121,99 @@ exports.newEntry = async (req, res) => {
     user.lastEntry = new Date();
     user.steak += 1;
 
+    let classAssigned = null;
+    let abilitiesGained = [];
+
+
+    if (user.level >= 2) {
+      // Determine top 2 stats
+      const stats = user.stats;
+
+
+
+      const statPairs = Object.entries(stats).map(([key, value]) => ({
+        key,
+        level: value.level,
+        xp: value.xp
+      }));
+      user.abilities = [];
+
+      statPairs.sort((a, b) => (b.level - a.level) || (b.xp - a.xp));
+      const topTwo = [statPairs[0].key, statPairs[1].key];
+
+      const ClassModel = require('../models/classModel');
+      const foundClass = await ClassModel.findOne({
+        highTwoStats: { $all: topTwo }
+      });
+
+      // Class & abilities
+      const armourBonus = 0;
+      const hpBonus =  0;
+
+
+      if (foundClass) {
+        user.class = foundClass.name;
+        user.abilities = [];
+        
+
+        for (const ability of foundClass.abilities) {
+          if (user.level >= ability.level) {
+            user.abilities.push(ability);
+            abilitiesGained.push(ability);
+            if (ability.passive) {
+              const statKey = ability.stat;
+              if (statKey in userObj.stats) {
+                user.stats[statKey].level += ability.mod;
+              } else if (statKey === 'hp') {
+                hpBonus += ability.mod;
+              } else if (statKey === 'armour') {
+                armourBonus += ability.mod;
+              } else if (statKey === 'spell') {
+                user.spells.forEach(spell => {
+                  spell.actions = spell.actions.map(action => ({
+                    ...action,
+                    mod: (action.mod || 0) + ability.mod
+                  }));
+                });
+              } else if (statKey === 'weapon') {
+                userObj.weapons.forEach(weapon => {
+                  user.actions = weapon.actions.map(action => ({
+                    ...action,
+                    mod: (action.mod || 0) + ability.mod
+                  }));
+                });
+              }
+            }
+          }
+        }
+
+        classAssigned = {
+          name: foundClass.name,
+          description: foundClass.description
+        };
+      }
+
+      user.armour = parseAndRollDiceExpression(getDiceExpressionByValue(stats.str.level + user.level+armourBonus));
+      user.hp = (parseAndRollDiceExpression(getDiceExpressionByValue(stats.str.level + user.level)) +hpBonus);
+
+    }
+
+    // Add new abilities from class on level up
+    if (user.class) {
+      const ClassModel = require('../models/classModel');
+      const classData = await ClassModel.findOne({ name: user.class });
+
+      if (classData) {
+        for (const ability of classData.abilities) {
+          const alreadyHas = user.abilities?.some(a => a.name === ability.name);
+          if (!alreadyHas && user.level >= ability.level) {
+            user.abilities.push(ability);
+            abilitiesGained.push(ability);
+          }
+        }
+      }
+    }
+
     // Try to get a random reward
     const reward = await tryGrantReward(user);
     await user.save();  // now includes added item if any
@@ -139,7 +232,7 @@ exports.newEntry = async (req, res) => {
 
     const finalUser = processUserEquipment(populatedUser);
     const result = {
-      user:finalUser,
+      user: finalUser,
       changes,
       origins: originalStats,
       ...(userLevelUpCount > 0 && {
@@ -152,6 +245,12 @@ exports.newEntry = async (req, res) => {
           type: reward.type,
           item: reward.data
         }
+      }),
+      ...(classAssigned && {
+        classAssigned
+      }),
+      ...(abilitiesGained.length > 0 && {
+        abilities: abilitiesGained
       })
     };
 

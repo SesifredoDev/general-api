@@ -6,6 +6,7 @@ const youTwoController  = require('../controllers/youTwoController');
 const avatarController = require('../controllers/avatarController');
 const partyController = require('../controllers/partyController');
 const equipmentRoutes = require('./equipment');
+const classRoutes = require('./class');
 
 // Main routes
 router.get('/train', youTwoController.train);
@@ -25,5 +26,6 @@ router.get('/party/:partyId', verifyToken, partyController.getParty);
 
 // Equipment routes
 router.use('/equipment', equipmentRoutes);
+router.use('/classes', classRoutes);
 
 module.exports = router;

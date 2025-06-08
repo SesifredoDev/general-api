@@ -15,7 +15,7 @@ const userSchema = new mongoose.Schema({
   avatar: String,
   icon: String,
   level: Number,
-  class: String,
+  class: {type:mongoose.Schema.Types.ObjectId, ref: 'GameClass', default: null},
   type: Number,
   xp: Number,
   hp: Number,
