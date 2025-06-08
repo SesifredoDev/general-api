@@ -124,10 +124,11 @@ exports.newEntry = async (req, res) => {
     let classAssigned = null;
     let abilitiesGained = [];
 
+    const stats = user.stats;
 
     if (user.level >= 2) {
       // Determine top 2 stats
-      const stats = user.stats;
+      
 
 
 
@@ -163,7 +164,7 @@ exports.newEntry = async (req, res) => {
             if (ability.passive) {
               const statKey = ability.stat;
               if (statKey in userObj.stats) {
-                user.stats[statKey].level += ability.mod;
+                stats[statKey].level += ability.mod;
               } else if (statKey === 'hp') {
                 hpBonus += ability.mod;
               } else if (statKey === 'armour') {
@@ -218,12 +219,6 @@ exports.newEntry = async (req, res) => {
     const reward = await tryGrantReward(user);
     await user.save();  // now includes added item if any
 
-
-
-    if (user.userLevelUpCount >= 1) {
-      user = levelUp(user);
-    }
-    await user.save();
     const populatedUser = await User.findById(id)
       .populate('weapons')
       .populate('spells')
@@ -231,6 +226,7 @@ exports.newEntry = async (req, res) => {
       .select('-password');
 
     const finalUser = processUserEquipment(populatedUser);
+    finalUser.stats = stats;
     const result = {
       user: finalUser,
       changes,
@@ -376,13 +372,7 @@ function parseAndRollDiceExpression(expression) {
   return total
 }
 
-function levelUp(user) {
-  user.hp = 5 + parseAndRollDiceExpression(getDiceExpressionByValue(user.stat.con) + getDiceExpressionByValue(user.level));
-  user.armour = 5 + parseAndRollDiceExpression(getDiceExpressionByValue(user.stat.dex) + getDiceExpressionByValue(user.stat.str));
-  user.evasion = 5 + parseAndRollDiceExpression(getDiceExpressionByValue(user.stat.dex));
 
-  return user;
-}
 // Select item based on rarity
 function getRandomByRarity(list) {
   const total = list.reduce((sum, obj) => sum + (obj.rarity?.percentage || 0), 0);

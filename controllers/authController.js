@@ -138,20 +138,81 @@ exports.logout = async (req, res) => {
 exports.getUserById = async (req, res) => {
   const { id } = req.params;
   try {
-    const user = await User.findById(id)
+    let user = await User.findById(id)
       .populate('weapons')
       .populate('spells')
       .populate('items')
       .select('-password');
 
     if (!user) return res.status(404).json({ message: 'User not found' });
-    const finalUser = processUserEquipment(user);
+
+    // Clone user to avoid mutating the database document
+    const userClone = JSON.parse(JSON.stringify(user));
+
+    const stats = userClone.stats;
+    let hpBonus = 0;
+    let armourBonus = 0;
+
+    // Load class and apply passive abilities
+    if (userClone.class) {
+      const ClassModel = require('../models/classModel');
+      const classData = await ClassModel.findOne({ name: userClone.class });
+
+      if (classData) {
+        userClone.abilities = [];
+
+        for (const ability of classData.abilities) {
+          if (userClone.level >= ability.level) {
+            userClone.abilities.push(ability);
+
+            if (ability.passive) {
+              const statKey = ability.stat;
+              const mod = ability.mod || 0;
+
+              if (stats[statKey]) {
+                stats[statKey].level += mod;
+              } else if (statKey === 'hp') {
+                hpBonus += mod;
+              } else if (statKey === 'armour') {
+                armourBonus += mod;
+              } else if (statKey === 'spell') {
+                userClone.spells.forEach(spell => {
+                  spell.actions = spell.actions.map(action => ({
+                    ...action,
+                    mod: (action.mod || 0) + mod
+                  }));
+                });
+              } else if (statKey === 'weapon') {
+                userClone.weapons.forEach(weapon => {
+                  weapon.actions = weapon.actions.map(action => ({
+                    ...action,
+                    mod: (action.mod || 0) + mod
+                  }));
+                });
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // Recalculate HP and Armour with passive bonuses
+    userClone.armour = parseAndRollDiceExpression(
+      getDiceExpressionByValue(stats.str.level + userClone.level + armourBonus)
+    );
+    userClone.hp = parseAndRollDiceExpression(
+      getDiceExpressionByValue(stats.str.level + userClone.level)
+    ) + hpBonus;
+
+    const finalUser = processUserEquipment(userClone);
     res.json(finalUser);
-    
+
   } catch (err) {
+    console.error(err);
     res.status(400).json({ message: 'Invalid ID format' });
   }
 };
+
 
 
 exports.getUserByUsername = async (req, res) => {
