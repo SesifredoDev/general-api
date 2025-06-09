@@ -39,7 +39,8 @@ exports.newEntry = async (req, res) => {
   const { input, id } = req.body;
   console.log(input)
   try {
-    const user = await User.findById(id)
+    let user = await User.findById(id)
+      .populate('class')  // This ensures full GameClass data
       .populate('weapons')
       .populate('spells')
       .populate('items')
@@ -122,16 +123,10 @@ exports.newEntry = async (req, res) => {
     user.steak += 1;
 
     let classAssigned = null;
-    let abilitiesGained = [];
 
     const stats = user.stats;
 
-    if (user.level >= 2) {
-      // Determine top 2 stats
-      
-
-
-
+    if (user.level >= 2  && userLevelUpCount >=1) {
       const statPairs = Object.entries(stats).map(([key, value]) => ({
         key,
         level: value.level,
@@ -146,87 +141,37 @@ exports.newEntry = async (req, res) => {
       const foundClass = await ClassModel.findOne({
         highTwoStats: { $all: topTwo }
       });
-
-      // Class & abilities
-      const armourBonus = 0;
-      const hpBonus =  0;
-
-
-      if (foundClass) {
-        user.class = foundClass.name;
-        user.abilities = [];
-        
-
-        for (const ability of foundClass.abilities) {
-          if (user.level >= ability.level) {
-            user.abilities.push(ability);
-            abilitiesGained.push(ability);
-            if (ability.passive) {
-              const statKey = ability.stat;
-              if (statKey in userObj.stats) {
-                stats[statKey].level += ability.mod;
-              } else if (statKey === 'hp') {
-                hpBonus += ability.mod;
-              } else if (statKey === 'armour') {
-                armourBonus += ability.mod;
-              } else if (statKey === 'spell') {
-                user.spells.forEach(spell => {
-                  spell.actions = spell.actions.map(action => ({
-                    ...action,
-                    mod: (action.mod || 0) + ability.mod
-                  }));
-                });
-              } else if (statKey === 'weapon') {
-                userObj.weapons.forEach(weapon => {
-                  user.actions = weapon.actions.map(action => ({
-                    ...action,
-                    mod: (action.mod || 0) + ability.mod
-                  }));
-                });
-              }
-            }
-          }
-        }
+      user.class= foundClass._id;
 
         classAssigned = {
           name: foundClass.name,
           description: foundClass.description
-        };
-      }
-
-      user.armour = parseAndRollDiceExpression(getDiceExpressionByValue(stats.str.level + user.level+armourBonus));
-      user.hp = (parseAndRollDiceExpression(getDiceExpressionByValue(stats.str.level + user.level)) +hpBonus);
+        };     
 
     }
 
-    // Add new abilities from class on level up
-    if (user.class) {
-      const ClassModel = require('../models/classModel');
-      const classData = await ClassModel.findOne({ name: user.class });
-
-      if (classData) {
-        for (const ability of classData.abilities) {
-          const alreadyHas = user.abilities?.some(a => a.name === ability.name);
-          if (!alreadyHas && user.level >= ability.level) {
-            user.abilities.push(ability);
-            abilitiesGained.push(ability);
-          }
-        }
-      }
-    }
-
-    // Try to get a random reward
-    const reward = await tryGrantReward(user);
-    await user.save();  // now includes added item if any
-
-    const populatedUser = await User.findById(id)
+    user.save();
+    
+    user = await User.findById(id)
+      .populate('class')  // This ensures full GameClass data
       .populate('weapons')
       .populate('spells')
       .populate('items')
       .select('-password');
 
-    const finalUser = processUserEquipment(populatedUser);
-    finalUser.stats = stats;
+    // Try to get a random reward
+    const reward = await tryGrantReward(user);
+     // now includes added item if any
+    
+    const classAppliedFeatures = applyClassAbilities(user);
+    console.log(classAppliedFeatures);
+    if (userLevelUpCount >= 1) {
+        user.armour = 5+ parseAndRollDiceExpression(getDiceExpressionByValue(classAppliedFeatures.stats.str.level + user.level + classAppliedFeatures.armourBonus));
+        user.hp = 5+ (parseAndRollDiceExpression(getDiceExpressionByValue(classAppliedFeatures.stats.str.level + user.level)) + classAppliedFeatures.hpBonus);
+        user.evasion = 3+  (parseAndRollDiceExpression(getDiceExpressionByValue(classAppliedFeatures.stats.dex.level)))
+    }
+    await user.save(); 
+    const finalUser = processUserEquipment(user.toObject());
     const result = {
       user: finalUser,
       changes,
@@ -244,9 +189,6 @@ exports.newEntry = async (req, res) => {
       }),
       ...(classAssigned && {
         classAssigned
-      }),
-      ...(abilitiesGained.length > 0 && {
-        abilities: abilitiesGained
       })
     };
 
@@ -257,6 +199,8 @@ exports.newEntry = async (req, res) => {
     res.status(400).json({ message: 'Invalid ID format or server error' });
   }
 };
+
+
 
 exports.sendFriendRequest = async (req, res) => {
   const { fromId, toId } = req.body;
@@ -307,6 +251,56 @@ exports.getFriends = async (req, res) => {
   res.json(user.friends);
 };
 
+
+
+function applyClassAbilities(userObj) {
+  let stats = userObj.stats;
+  let spells = userObj.spells;
+  let weapons  = userObj.weapons
+  let hpBonus = 0;
+  let armourBonus = 0;
+  
+  if (!userObj.class?.abilities) return {
+    hpBonus,
+    armourBonus,
+    stats,
+    spells,
+    weapons,
+  };
+
+  userObj.abilities ??= [];
+
+  for (const ability of userObj.class.abilities) {
+    if (userObj.level >= ability.level) {
+      const alreadyHas = userObj.abilities.some(a => a.name === ability.name);
+      if (!alreadyHas) {
+        userObj.abilities.push(ability);
+      }
+
+      if (ability.passive) {
+        const mod = ability.mod || 0;
+        const statKey = ability.stat;
+
+        if (stats[statKey]) {
+          stats[statKey].level += mod;
+        } else if (statKey === 'hp') {
+          hpBonus += mod;
+        } else if (statKey === 'armour') {
+          armourBonus += mod;
+        }
+      }
+    }
+  }
+
+  return {
+    hpBonus,
+    armourBonus,
+    stats: { ...stats }, // return a shallow copy to avoid unintended mutation,
+    spells:{...spells},
+    weapons: {...weapons},
+    
+  };
+}
 
 
 

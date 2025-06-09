@@ -9,7 +9,7 @@ const abilitySchema = new mongoose.Schema({
   passive: { type: Boolean, default: false },
   stat: {
     type: String,
-    enum: ['str', 'int', 'wis', 'dex', 'cha', 'con', 'hp', 'armour', 'spell', 'weapon'],
+    enum: ['str', 'int', 'wis', 'dex', 'cha', 'con', 'hp', 'armour'],
     required: true
   }
 }, { _id: false });

@@ -109,7 +109,11 @@ exports.getStarterPacks = async (req, res) => {
 exports.selectStarterPack = async (req, res) => {
   const { userId, packId } = req.body;
 
-  const user = await User.findById(userId);
+  const user = await User.findById(userId)
+    .populate('weapons')
+    .populate('spells')
+    .populate('items')
+    .select('-password');
   if (!user) return res.status(404).json({ message: 'User not found' });
 
   if (user.starterPackSelected) {
@@ -125,13 +129,18 @@ exports.selectStarterPack = async (req, res) => {
   user.starterPackSelected = true;
 
   await user.save();
-  const populatedUser = await user
+  let populatedUser = await User.findById(userId)
     .populate('weapons')
     .populate('spells')
     .populate('items')
     .select('-password');
 
-  const finalUser = processUserEquipment(populatedUser);
+  const userClone = populatedUser.toObject();
+
+  const classAppliedFeatures = applyClassAbilities(userClone);
+  userClone.stats = classAppliedFeatures.stats;
+  const finalUser = processUserEquipment(userClone);
+  finalUser.stats = classAppliedFeatures.stats;
 
   res.json({ message: 'Starter pack applied', finalUser });
 };
@@ -157,7 +166,7 @@ function attachDiceToActions(actions = [], userStats = {}) {
     const statKey = action.stat;
     const statVal = userStats[statKey]?.level || 1; // fallback to 1
     const rawValue = statVal + (action?.mod || 0);
-    const minValue = Math.max(1, rawValue); 
+    const minValue = Math.max(1, rawValue);
     return {
       ...action,
       dice: getDiceExpressionByValue(rawValue)
@@ -166,9 +175,9 @@ function attachDiceToActions(actions = [], userStats = {}) {
 }
 
 exports.processUserEquipment = (user) => {
-  const userObj = user.toObject(); // deep clone with populated fields
+  const userObj = user; // deep clone with populated fields
   const stats = userObj.stats;
-
+  console.log(userObj);
   if (Array.isArray(userObj.weapons)) {
     userObj.weapons = userObj.weapons.map(w => ({
       ...w,
@@ -198,4 +207,56 @@ exports.processUserEquipment = (user) => {
   }
 
   return userObj;
+}
+
+
+
+
+function applyClassAbilities(userObj) {
+  let stats = userObj.stats;
+  let spells = userObj.spells;
+  let weapons = userObj.weapons
+  let hpBonus = 0;
+  let armourBonus = 0;
+
+  if (!userObj.class?.abilities) return {
+    hpBonus,
+    armourBonus,
+    stats,
+    spells,
+    weapons,
+  };
+
+  userObj.abilities ??= [];
+
+  for (const ability of userObj.class.abilities) {
+    if (userObj.level >= ability.level) {
+      const alreadyHas = userObj.abilities.some(a => a.name === ability.name);
+      if (!alreadyHas) {
+        userObj.abilities.push(ability);
+      }
+
+      if (ability.passive) {
+        const mod = ability.mod || 0;
+        const statKey = ability.stat;
+
+        if (stats[statKey]) {
+          stats[statKey].level += mod;
+        } else if (statKey === 'hp') {
+          hpBonus += mod;
+        } else if (statKey === 'armour') {
+          armourBonus += mod;
+        }
+      }
+    }
+  }
+
+  return {
+    hpBonus,
+    armourBonus,
+    stats: { ...stats }, // return a shallow copy to avoid unintended mutation,
+    spells: { ...spells },
+    weapons: { ...weapons },
+
+  };
 }

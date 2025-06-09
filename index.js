@@ -1,4 +1,6 @@
 const express = require('express');
+
+const bodyParser = require('body-parser');
 const path = require('path');
 const cors = require('cors');
 const mongoose = require('mongoose');
@@ -7,8 +9,9 @@ const mongoose = require('mongoose');
 const authRoutes = require('./routes/auth');
 const youTwoRoutes  = require('./routes/youTwo')
 
+
+const trainingDataRoutes = require('./routes/trainingData');
 const train = require("./rpgML/train");
-const predict = require("./rpgML/predict");
 const rpgUtil = require("./rpgML/utils");
 
 
@@ -38,6 +41,10 @@ app.set('view engine', 'ejs')
 app.use(express.json())
 
 
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true
@@ -60,6 +67,8 @@ app.get('/train', (req,res)=>{
   train.train();
   res.send('training now..')
 })
+
+app.use('/api/trainData', trainingDataRoutes);
 
 app.post('/predict', async (req, res)=>{
   const data = req.body;
