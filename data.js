@@ -4,7 +4,7 @@ const fs = require("fs");
 // --- CONFIGURATION ---
 
 // Fetch your API key from environment variables
-const API_KEY = "AIzaSyCuA7YmBxaB_1C_mDyEjXfc3URL5SkJ9DM";
+const API_KEY = "";
 if (!API_KEY) {
   throw new Error("Missing GOOGLE_GEMINI_API_KEY environment variable.");
 }
