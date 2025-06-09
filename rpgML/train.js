@@ -48,7 +48,7 @@ async function train () {
 
   model.compile({ optimizer: tf.train.adam(0.001), loss: 'meanSquaredError' });
 
-  const EPOCHS = 50;
+  const EPOCHS = 150;
   const BATCH_SIZE = 32;
 
   console.log('🧪 Training...');
