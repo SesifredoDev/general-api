@@ -167,7 +167,7 @@ exports.newEntry = async (req, res) => {
     console.log(classAppliedFeatures);
     if (userLevelUpCount >= 1) {
         user.armour = 5+ parseAndRollDiceExpression(getDiceExpressionByValue(classAppliedFeatures.stats.str.level + user.level + classAppliedFeatures.armourBonus));
-        user.hp = 5+ (parseAndRollDiceExpression(getDiceExpressionByValue(classAppliedFeatures.stats.str.level + user.level)) + classAppliedFeatures.hpBonus);
+        user.hp = 5+ (parseAndRollDiceExpression(getDiceExpressionByValue(classAppliedFeatures.stats.con.level + user.level)) + classAppliedFeatures.hpBonus);
         user.evasion = 3+  (parseAndRollDiceExpression(getDiceExpressionByValue(classAppliedFeatures.stats.dex.level)))
     }
     await user.save(); 
