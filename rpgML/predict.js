@@ -3,17 +3,14 @@ const fs = require('fs');
 const path = require('path');
 const { extractFeatures } = require('./features');
 
-const STAT_MAP = {
-  Con: 0,
-  Str: 1,
-  Dex: 2,
-  Wis: 3,
-  Int: 4,
-  Cha: 5
-};
-const STAT_KEYS = Object.keys(STAT_MAP);
+const MODEL_DIR = path.join(__dirname, '..', 'assets');
 
-const MODEL_DIR = 'assets';
+// Pad or truncate vector to match expected size
+function padOrTrim(vector, targetLength) {
+  if (vector.length > targetLength) return vector.slice(0, targetLength);
+  while (vector.length < targetLength) vector.push(0);
+  return vector;
+}
 
 async function loadModel() {
   const modelJson = JSON.parse(fs.readFileSync(path.join(MODEL_DIR, 'model.json'), 'utf8'));
@@ -22,46 +19,52 @@ async function loadModel() {
   const artifacts = {
     modelTopology: modelJson.modelTopology,
     weightSpecs: modelJson.weightsManifest[0].weights,
-    weightData
+    weightData,
   };
 
   return await tf.loadLayersModel(tf.io.fromMemory(artifacts));
 }
 
 async function predict(type, label) {
-    const vocabArray = JSON.parse(fs.readFileSync(path.join(MODEL_DIR,"vocab.json"), 'utf8'));
-    const statKeys = JSON.parse(fs.readFileSync(path.join(MODEL_DIR,"stats.json"), 'utf8'));
+  // Load saved vocabulary and stats
+  const vocabArray = JSON.parse(fs.readFileSync(path.join(MODEL_DIR, 'vocab.json'), 'utf8'));
+  const statKeys = JSON.parse(fs.readFileSync(path.join(MODEL_DIR, 'stats.json'), 'utf8'));
 
-    const vocabMap = vocabArray.reduce((map, token, index) => {
-        map[token] = index;
-        return map;
-    }, {});
-    const vocabSize = vocabArray.length;
+  const vocabMap = Object.fromEntries(vocabArray.map((token, i) => [token, i]));
+  const vocabSize = vocabArray.length;
 
-    const { vector, details } = await extractFeatures(type, label, vocabMap, vocabSize);
-    console.log('🔍 Extracted Features:', vector);
+  // Extract features and pad/truncate
+  const { vector } = await extractFeatures(type, label, vocabMap, vocabSize);
+  const paddedVector = padOrTrim(vector, vocabSize);
 
-    const inputTensor = tf.tensor2d([vector]);
-    const model = await loadModel();
-    console.log(model.summary())
-    const prediction = model.predict(inputTensor);
-    const [difficultyScore, statScore] = prediction.dataSync();
+  // Create input tensor
+  const inputTensor = tf.tensor2d([paddedVector], [1, vocabSize]);
 
-    const predictedDifficulty = difficultyScore * 1000;
-    const predictedStatIndex = Math.round(statScore * (statKeys.length - 1));
-    const predictedStat = statKeys[predictedStatIndex];
+  // Load model and predict
+  const model = await loadModel();
+  const prediction = model.predict(inputTensor);
 
-    console.log(`🧠 Predicted difficulty for "${label}" → ${predictedDifficulty.toFixed(2)}`);
-    console.log(`📊 Predicted stat → ${predictedStat}`);
+  const [difficultyScore, statScore] = await prediction.array().then(res => res[0]);
 
-    return {predictedDifficulty, predictedStat}
+  // Clean up
+  tf.dispose([inputTensor, prediction]);
+
+  // Format result
+  const predictedDifficulty = Math.round(difficultyScore * 1000);
+  const predictedStatIndex = Math.round(statScore * (statKeys.length - 1));
+  const predictedStat = statKeys[predictedStatIndex];
+
+  console.log(`🧠 Predicted difficulty for "${label}" → ${predictedDifficulty}`);
+  console.log(`📊 Predicted stat → ${predictedStat}`);
+
+  return { predictedDifficulty, predictedStat };
 }
 
-// Example usage
-const type = 3;
-const label = "wrote a reflective journal entry about recent experiences";
+// Optional: test predict directly
+if (require.main === module) {
+  predict(3, "wrote a reflective journal entry about recent experiences")
+    .then(console.log)
+    .catch(console.error);
+}
 
-
-
-
-module.exports = {loadModel, predict}
+module.exports = { loadModel, predict };
