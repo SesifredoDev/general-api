@@ -10,7 +10,7 @@ const {
 } = require('./features');
 
 const STAT_MAP = {
-  Con: 0, Str: 1, Dex: 2, Wis: 3, Int: 4, Cha: 5
+  con: 0, str: 1, dex: 2, wis: 3, int: 4, cha: 5
 };
 const STAT_KEYS = Object.keys(STAT_MAP);
 
@@ -45,7 +45,7 @@ async function train() {
     inputs.push(paddedVector);
 
     const normalizedValue = value / 1000; // Assumes values range from 0 to 1000
-    const statIndex = STAT_MAP[stat] ?? 0;
+    const statIndex = STAT_MAP[(stat).toLocaleLowerCase()] ?? 0;
     outputs.push([normalizedValue, statIndex / 5]);
   }
 
